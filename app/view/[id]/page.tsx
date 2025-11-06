@@ -19,25 +19,28 @@ export default function ViewFile() {
   const [loopMode, setLoopMode] = useState(false)
 
   useEffect(() => {
-    // In a real app, fetch the file data from an API
     const fetchFile = async () => {
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        const response = await fetch(`/api/drive/files/${params.id}`)
 
-        // Mock data
-        const fileData = {
-          id: params.id,
-          name: "Sample Document.pdf",
-          type: "pdf",
-          size: 2500000,
-          uploadDate: new Date().toISOString(),
-          author: "John Doe",
-          url: "/placeholder.svg?height=800&width=600",
-          coverImage: "/placeholder.svg?height=400&width=300",
+        if (!response.ok) {
+          throw new Error("Failed to fetch file")
         }
 
-        setFile(fileData)
+        const fileData = await response.json()
+
+        setFile({
+          id: fileData.id,
+          name: fileData.name,
+          mimeType: fileData.mimeType,
+          size: parseInt(fileData.size || "0"),
+          modifiedTime: fileData.modifiedTime,
+          webViewLink: fileData.webViewLink,
+          thumbnailLink: fileData.thumbnailLink,
+          iconLink: fileData.iconLink,
+          owners: fileData.owners,
+          description: fileData.description,
+        })
       } catch (error) {
         console.error("Error fetching file:", error)
         toast({
@@ -50,7 +53,9 @@ export default function ViewFile() {
       }
     }
 
-    fetchFile()
+    if (params.id) {
+      fetchFile()
+    }
   }, [params.id])
 
   const toggleFullScreen = () => {
@@ -131,7 +136,15 @@ export default function ViewFile() {
           <Button variant="outline" size="icon" onClick={toggleFullScreen}>
             {isFullScreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
           </Button>
-          <Button variant="outline" size="icon">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => {
+              if (file?.webViewLink) {
+                window.open(file.webViewLink, "_blank")
+              }
+            }}
+          >
             <Download className="h-4 w-4" />
           </Button>
         </div>

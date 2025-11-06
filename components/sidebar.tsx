@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import {
   FileText,
@@ -16,7 +17,10 @@ import {
   Upload,
   Settings,
   PlusCircle,
+  LogOut,
+  LogIn,
 } from "lucide-react"
+import { useSession, signIn, signOut } from "next-auth/react"
 
 const routes = [
   {
@@ -76,16 +80,67 @@ const routes = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const { data: session, status } = useSession()
 
   return (
     <div className="flex flex-col h-full py-4 space-y-4 border-r bg-muted/40 w-[240px]">
       <div className="px-3 py-2">
-        <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">DocManager</h2>
+        <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
+          DocManager
+        </h2>
+
+        {/* User Info */}
+        {session?.user && (
+          <div className="mb-3 px-3 py-2 bg-background rounded-lg">
+            <div className="flex items-center space-x-3">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={session.user.image || ""} alt={session.user.name || ""} />
+                <AvatarFallback>
+                  {session.user.name?.charAt(0).toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">
+                  {session.user.name}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {session.user.email}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Sign In/Out Button */}
         <div className="space-y-1">
-          <Button variant="secondary" className="w-full justify-start">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New File
-          </Button>
+          {status === "authenticated" ? (
+            <>
+              <Link href="/upload">
+                <Button variant="secondary" className="w-full justify-start">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Upload File
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={() => signOut()}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="default"
+              className="w-full justify-start"
+              onClick={() => signIn("google")}
+              disabled={status === "loading"}
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              {status === "loading" ? "Loading..." : "Sign In with Google"}
+            </Button>
+          )}
         </div>
       </div>
       <ScrollArea className="flex-1 px-3">
@@ -96,7 +151,7 @@ export function Sidebar() {
               href={route.href}
               className={cn(
                 "group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
-                pathname === route.href ? "bg-accent" : "transparent",
+                pathname === route.href ? "bg-accent" : "transparent"
               )}
             >
               <route.icon className={cn("mr-3 h-5 w-5", route.color)} />

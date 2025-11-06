@@ -25,55 +25,25 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { toast } from "@/components/ui/use-toast"
 
-// Mock data for file types
-const fileTypes = {
-  pdf: { icon: FileText, color: "text-blue-500", category: "documents" },
-  doc: { icon: FileText, color: "text-blue-500", category: "documents" },
-  txt: { icon: FileText, color: "text-blue-500", category: "documents" },
-  xls: { icon: FileSpreadsheet, color: "text-green-500", category: "spreadsheets" },
-  ppt: { icon: FilePresentation, color: "text-yellow-500", category: "presentations" },
-  jpg: { icon: ImageIcon, color: "text-purple-500", category: "images" },
-  png: { icon: ImageIcon, color: "text-purple-500", category: "images" },
-  gif: { icon: ImageIcon, color: "text-purple-500", category: "images" },
-}
-
-// Generate mock files
-const generateMockFiles = () => {
-  const files = []
-  const fileNames = [
-    "Annual Report",
-    "Project Proposal",
-    "Meeting Notes",
-    "Budget Forecast",
-    "Marketing Plan",
-    "Product Roadmap",
-    "Team Photo",
-    "Logo Design",
-    "User Research",
-    "Client Presentation",
-    "Sales Data",
-    "Vacation Pictures",
-  ]
-
-  const extensions = ["pdf", "doc", "txt", "xls", "ppt", "jpg", "png", "gif"]
-
-  for (let i = 0; i < 20; i++) {
-    const nameIndex = Math.floor(Math.random() * fileNames.length)
-    const extIndex = Math.floor(Math.random() * extensions.length)
-    const ext = extensions[extIndex]
-
-    files.push({
-      id: `file-${i}`,
-      name: `${fileNames[nameIndex]}.${ext}`,
-      type: ext,
-      size: Math.floor(Math.random() * 10000000),
-      uploadDate: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000).toISOString(),
-      author: Math.random() > 0.2 ? "John Doe" : "Unknown",
-      coverImage: ext.match(/jpg|png|gif/) ? `/placeholder.svg?height=200&width=200` : null,
-    })
+// Helper function to get icon and color based on MIME type
+const getFileIconFromMimeType = (mimeType: string) => {
+  if (
+    mimeType === "application/pdf" ||
+    mimeType.includes("document") ||
+    mimeType === "text/plain"
+  ) {
+    return { icon: FileText, color: "text-blue-500" }
   }
-
-  return files
+  if (mimeType.includes("spreadsheet")) {
+    return { icon: FileSpreadsheet, color: "text-green-500" }
+  }
+  if (mimeType.includes("presentation")) {
+    return { icon: FilePresentation, color: "text-yellow-500" }
+  }
+  if (mimeType.startsWith("image/")) {
+    return { icon: ImageIcon, color: "text-purple-500" }
+  }
+  return { icon: FileText, color: "text-gray-500" }
 }
 
 export function FileGrid({ category = null }) {
@@ -81,26 +51,44 @@ export function FileGrid({ category = null }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Simulate API call
     const fetchFiles = async () => {
       setLoading(true)
       try {
-        // Simulate network delay
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        let response
 
-        let allFiles = generateMockFiles()
-
-        // Filter by category if provided
         if (category) {
-          allFiles = allFiles.filter((file) => fileTypes[file.type]?.category === category)
+          // Fetch files by category
+          response = await fetch(`/api/drive/category?type=${category}`)
+        } else {
+          // Fetch all files
+          response = await fetch("/api/drive/files")
         }
 
-        setFiles(allFiles)
+        if (!response.ok) {
+          throw new Error("Failed to fetch files")
+        }
+
+        const data = await response.json()
+
+        // Transform Google Drive files to our format
+        const transformedFiles = (category ? data.files : data.files || []).map((file: any) => ({
+          id: file.id,
+          name: file.name,
+          mimeType: file.mimeType,
+          size: parseInt(file.size || "0"),
+          modifiedTime: file.modifiedTime,
+          thumbnailLink: file.thumbnailLink,
+          iconLink: file.iconLink,
+          webViewLink: file.webViewLink,
+          owners: file.owners,
+        }))
+
+        setFiles(transformedFiles)
       } catch (error) {
         console.error("Error fetching files:", error)
         toast({
           title: "Error",
-          description: "Failed to load files. Please try again.",
+          description: "Failed to load files. Please sign in or try again.",
           variant: "destructive",
         })
       } finally {
@@ -123,26 +111,80 @@ export function FileGrid({ category = null }) {
     return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
   }
 
-  const handleDelete = (fileId) => {
-    setFiles(files.filter((file) => file.id !== fileId))
-    toast({
-      title: "File Deleted",
-      description: "The file has been successfully deleted.",
-    })
+  const handleDelete = async (fileId: string) => {
+    try {
+      const response = await fetch("/api/drive/delete", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileId }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to delete file")
+      }
+
+      setFiles(files.filter((file: any) => file.id !== fileId))
+      toast({
+        title: "File Deleted",
+        description: "The file has been successfully deleted.",
+      })
+    } catch (error) {
+      console.error("Error deleting file:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete file. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleDownload = (file) => {
-    toast({
-      title: "Download Started",
-      description: `Downloading ${file.name}...`,
-    })
+  const handleDownload = (file: any) => {
+    // Open the file's webContentLink or webViewLink
+    if (file.webViewLink) {
+      window.open(file.webViewLink, "_blank")
+      toast({
+        title: "Opening File",
+        description: `Opening ${file.name} in Google Drive...`,
+      })
+    } else {
+      toast({
+        title: "Error",
+        description: "Download link not available for this file.",
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleShare = (file) => {
-    toast({
-      title: "Share Link Created",
-      description: `Share link for ${file.name} has been copied to clipboard.`,
-    })
+  const handleShare = async (file: any) => {
+    try {
+      const response = await fetch("/api/drive/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileId: file.id }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to share file")
+      }
+
+      const data = await response.json()
+
+      // Copy link to clipboard
+      if (data.webViewLink) {
+        await navigator.clipboard.writeText(data.webViewLink)
+        toast({
+          title: "Share Link Copied",
+          description: `Share link for ${file.name} has been copied to clipboard.`,
+        })
+      }
+    } catch (error) {
+      console.error("Error sharing file:", error)
+      toast({
+        title: "Error",
+        description: "Failed to share file. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   if (loading) {
@@ -182,17 +224,24 @@ export function FileGrid({ category = null }) {
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-      {files.map((file) => {
-        const FileIcon = fileTypes[file.type]?.icon || FileText
-        const iconColor = fileTypes[file.type]?.color || "text-gray-500"
+      {files.map((file: any) => {
+        const { icon: FileIcon, color: iconColor } = getFileIconFromMimeType(
+          file.mimeType
+        )
 
         return (
           <Card key={file.id} className="overflow-hidden hover:shadow-md transition-shadow">
             <Link href={`/view/${file.id}`}>
               <CardContent className="p-0">
-                {file.coverImage ? (
+                {file.thumbnailLink ? (
                   <div className="relative h-[200px] w-full">
-                    <Image src={file.coverImage || "/placeholder.svg"} alt={file.name} fill className="object-cover" />
+                    <Image
+                      src={file.thumbnailLink}
+                      alt={file.name}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-[200px] bg-muted/50">
@@ -203,7 +252,11 @@ export function FileGrid({ category = null }) {
             </Link>
             <CardFooter className="flex flex-col items-start p-4">
               <div className="flex items-center justify-between w-full">
-                <Link href={`/view/${file.id}`} className="font-medium hover:underline">
+                <Link
+                  href={`/view/${file.id}`}
+                  className="font-medium hover:underline truncate max-w-[180px]"
+                  title={file.name}
+                >
                   {file.name}
                 </Link>
                 <DropdownMenu>
@@ -216,14 +269,17 @@ export function FileGrid({ category = null }) {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => handleDownload(file)}>
                       <Download className="mr-2 h-4 w-4" />
-                      Download
+                      Open in Drive
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleShare(file)}>
                       <Share className="mr-2 h-4 w-4" />
                       Share
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handleDelete(file.id)} className="text-red-600">
+                    <DropdownMenuItem
+                      onClick={() => handleDelete(file.id)}
+                      className="text-red-600"
+                    >
                       <Trash className="mr-2 h-4 w-4" />
                       Delete
                     </DropdownMenuItem>
@@ -232,9 +288,13 @@ export function FileGrid({ category = null }) {
               </div>
               <div className="flex items-center justify-between w-full mt-2 text-xs text-muted-foreground">
                 <span>{formatFileSize(file.size)}</span>
-                <span>{formatDate(file.uploadDate)}</span>
+                <span>{formatDate(file.modifiedTime)}</span>
               </div>
-              <div className="text-xs text-muted-foreground mt-1">Author: {file.author}</div>
+              {file.owners && file.owners.length > 0 && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  Owner: {file.owners[0].displayName || file.owners[0].emailAddress}
+                </div>
+              )}
             </CardFooter>
           </Card>
         )

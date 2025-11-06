@@ -94,38 +94,45 @@ export function FileUploader() {
     setUploading(true)
     setProgress(0)
 
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setProgress((prevProgress) => {
-        if (prevProgress >= 100) {
-          clearInterval(interval)
-          return 100
-        }
-        return prevProgress + 5
-      })
-    }, 200)
-
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      let uploadedCount = 0
+
+      for (const file of files) {
+        const formData = new FormData()
+        formData.append("file", file)
+
+        const response = await fetch("/api/drive/upload", {
+          method: "POST",
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error(`Failed to upload ${file.name}`)
+        }
+
+        uploadedCount++
+        setProgress(Math.round((uploadedCount / files.length) * 100))
+      }
 
       toast({
         title: "Upload Complete",
-        description: `Successfully uploaded ${files.length} file${files.length > 1 ? "s" : ""}.`,
+        description: `Successfully uploaded ${files.length} file${files.length > 1 ? "s" : ""} to Google Drive.`,
       })
 
       setFiles([])
+      setProgress(0)
     } catch (error) {
       console.error("Upload error:", error)
       toast({
         title: "Upload Failed",
-        description: "There was an error uploading your files. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "There was an error uploading your files. Please try again.",
         variant: "destructive",
       })
     } finally {
-      clearInterval(interval)
       setUploading(false)
-      setProgress(0)
     }
   }
 
