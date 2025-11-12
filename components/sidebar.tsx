@@ -23,49 +23,41 @@ const routes = [
     label: "Dashboard",
     icon: LayoutGrid,
     href: "/",
-    color: "text-sky-500",
   },
   {
     label: "Search",
     icon: Search,
     href: "/search",
-    color: "text-violet-500",
   },
   {
     label: "Library",
     icon: Library,
     href: "/library",
-    color: "text-pink-700",
   },
   {
     label: "Upload",
     icon: Upload,
     href: "/upload",
-    color: "text-orange-500",
   },
   {
     label: "Documents",
     icon: FileText,
     href: "/category/documents",
-    color: "text-emerald-500",
   },
   {
     label: "Spreadsheets",
     icon: FileSpreadsheet,
     href: "/category/spreadsheets",
-    color: "text-green-700",
   },
   {
     label: "Presentations",
     icon: FilePresentation,
     href: "/category/presentations",
-    color: "text-yellow-500",
   },
   {
     label: "Images",
     icon: Image,
     href: "/category/images",
-    color: "text-rose-500",
   },
   {
     label: "Settings",
@@ -99,7 +91,7 @@ export function Sidebar() {
                 pathname === route.href ? "bg-accent" : "transparent",
               )}
             >
-              <route.icon className={cn("mr-3 h-5 w-5", route.color)} />
+              <route.icon className="mr-3 h-5 w-5 text-muted-foreground" />
               <span>{route.label}</span>
             </Link>
           ))}

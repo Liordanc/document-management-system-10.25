@@ -1,7 +1,6 @@
 import type React from "react"
 import "@/app/globals.css"
 import { Inter } from "next/font/google"
-import { ThemeProvider } from "@/components/theme-provider"
 import { Sidebar } from "@/components/sidebar"
 import { Toaster } from "@/components/ui/toaster"
 
@@ -21,13 +20,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <div className="flex-1">{children}</div>
-          </div>
-          <Toaster />
-        </ThemeProvider>
+        <div className="flex min-h-screen">
+          <Sidebar />
+          <div className="flex-1">{children}</div>
+        </div>
+        <Toaster />
       </body>
     </html>
   )
