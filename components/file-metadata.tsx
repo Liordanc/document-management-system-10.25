@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Calendar, User, HardDrive } from "lucide-react"
+import { FileText, Calendar, User, HardDrive } from "@/components/icons"
 
 export function FileMetadata({ file }) {
   const formatFileSize = (bytes) => {
@@ -49,46 +49,54 @@ export function FileMetadata({ file }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div className="flex items-start space-x-3">
-              <FileText className="h-5 w-5 mt-0.5 text-muted-foreground" />
+              <div className="bg-background p-2 rounded-full">
+                <FileText className="h-5 w-5 text-primary" />
+              </div>
               <div>
                 <p className="text-sm font-medium">File Name</p>
-                <p className="text-sm text-muted-foreground">{file.name}</p>
+                <p className="text-sm text-foreground-secondary">{file.name}</p>
               </div>
             </div>
 
             <div className="flex items-start space-x-3">
-              <Badge variant="outline" className="h-5 mt-0.5">
+              <Badge variant="outline" className="h-5 mt-0.5 bg-background">
                 {file.type.toUpperCase()}
               </Badge>
               <div>
                 <p className="text-sm font-medium">File Type</p>
-                <p className="text-sm text-muted-foreground">{getFileCategory(file.type)}</p>
+                <p className="text-sm text-foreground-secondary">{getFileCategory(file.type)}</p>
               </div>
             </div>
 
             <div className="flex items-start space-x-3">
-              <HardDrive className="h-5 w-5 mt-0.5 text-muted-foreground" />
+              <div className="bg-background p-2 rounded-full">
+                <HardDrive className="h-5 w-5 text-accent" />
+              </div>
               <div>
                 <p className="text-sm font-medium">File Size</p>
-                <p className="text-sm text-muted-foreground">{formatFileSize(file.size)}</p>
+                <p className="text-sm text-foreground-secondary">{formatFileSize(file.size)}</p>
               </div>
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="flex items-start space-x-3">
-              <User className="h-5 w-5 mt-0.5 text-muted-foreground" />
+              <div className="bg-background p-2 rounded-full">
+                <User className="h-5 w-5 text-primary" />
+              </div>
               <div>
                 <p className="text-sm font-medium">Author</p>
-                <p className="text-sm text-muted-foreground">{file.author || "Unknown"}</p>
+                <p className="text-sm text-foreground-secondary">{file.author || "Unknown"}</p>
               </div>
             </div>
 
             <div className="flex items-start space-x-3">
-              <Calendar className="h-5 w-5 mt-0.5 text-muted-foreground" />
+              <div className="bg-background p-2 rounded-full">
+                <Calendar className="h-5 w-5 text-accent" />
+              </div>
               <div>
                 <p className="text-sm font-medium">Upload Date</p>
-                <p className="text-sm text-muted-foreground">{formatDate(file.uploadDate)}</p>
+                <p className="text-sm text-foreground-secondary">{formatDate(file.uploadDate)}</p>
               </div>
             </div>
           </div>
@@ -97,4 +105,3 @@ export function FileMetadata({ file }) {
     </Card>
   )
 }
-

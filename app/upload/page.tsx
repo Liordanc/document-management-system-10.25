@@ -1,4 +1,6 @@
-import { FileUploader } from "@/components/file-uploader"
+import { Suspense } from "react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { DynamicFileUploader } from "@/lib/dynamic-imports"
 
 export default function UploadPage() {
   return (
@@ -7,8 +9,9 @@ export default function UploadPage() {
       <p className="text-muted-foreground">
         Upload your documents, spreadsheets, presentations, and images to your document management system.
       </p>
-      <FileUploader />
+      <Suspense fallback={<Skeleton className="h-[400px] w-full" />}>
+        <DynamicFileUploader />
+      </Suspense>
     </div>
   )
 }
-

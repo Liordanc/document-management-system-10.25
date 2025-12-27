@@ -1,15 +1,24 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/components/ui/use-toast"
+// בתחילת הקובץ, הוסף את הייבוא:
+import { GoogleAuthButton } from "@/components/google-auth-button"
+import { useGoogleAuth } from "@/lib/auth/use-google-auth"
+import { DynamicOfflineModeManager } from "@/lib/dynamic-imports"
+import { DynamicRecentActivity } from "@/lib/dynamic-imports"
 
 export default function SettingsPage() {
+  // הוסף את השימוש ב-hook לניהול האימות
+  const { isAuthenticated } = useGoogleAuth()
+
   const [darkMode, setDarkMode] = useState(false)
   const [loopMode, setLoopMode] = useState(false)
   const [autoPlay, setAutoPlay] = useState(true)
@@ -45,6 +54,9 @@ export default function SettingsPage() {
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="storage">Storage</TabsTrigger>
+          <TabsTrigger value="integrations">Integrations</TabsTrigger> {/* הוסף לשונית אינטגרציות */}
+          <TabsTrigger value="offline">Offline Mode</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -154,8 +166,97 @@ export default function SettingsPage() {
             </CardFooter>
           </Card>
         </TabsContent>
+
+        {/* הוסף לשונית אינטגרציות */}
+        <TabsContent value="integrations">
+          <Card>
+            <CardHeader>
+              <CardTitle>Google Integration</CardTitle>
+              <CardDescription>Connect your Google account to access Google Drive files.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between space-x-2">
+                <div>
+                  <h3 className="font-medium">Google Account</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {isAuthenticated
+                      ? "Your account is connected to Google"
+                      : "Connect your account to access Google Drive files"}
+                  </p>
+                </div>
+                <GoogleAuthButton isAuthenticated={isAuthenticated} />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="offline">
+          <Suspense
+            fallback={
+              <Card>
+                <CardHeader>
+                  <CardTitle>Offline Mode</CardTitle>
+                  <CardDescription>Configure offline access settings</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-[300px] w-full" />
+                </CardContent>
+              </Card>
+            }
+          >
+            <DynamicOfflineModeManager />
+          </Suspense>
+        </TabsContent>
+
+        <TabsContent value="activity">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>Your recent actions and activity summary</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="bg-muted/30 p-4 rounded-lg">
+                  <h3 className="font-medium mb-1">This Week</h3>
+                  <div className="text-2xl font-bold">12 Uploads</div>
+                  <div className="text-sm text-muted-foreground">3 Downloads</div>
+                </div>
+                <div className="bg-muted/30 p-4 rounded-lg">
+                  <h3 className="font-medium mb-1">Last 30 Days</h3>
+                  <div className="text-2xl font-bold">47 Uploads</div>
+                  <div className="text-sm text-muted-foreground">18 Downloads</div>
+                </div>
+                <div className="bg-muted/30 p-4 rounded-lg">
+                  <h3 className="font-medium mb-1">Total Activity</h3>
+                  <div className="text-2xl font-bold">142 Files</div>
+                  <div className="text-sm text-muted-foreground">36 Shared</div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium mb-4">Activity Timeline</h3>
+                <Suspense
+                  fallback={
+                    <div className="space-y-4">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="flex items-start space-x-4">
+                          <Skeleton className="h-10 w-10 rounded-full" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-[250px]" />
+                            <Skeleton className="h-3 w-[200px]" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  }
+                >
+                  <DynamicRecentActivity />
+                </Suspense>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   )
 }
-

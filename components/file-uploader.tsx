@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { toast } from "@/components/ui/use-toast"
-import { Upload, X, FileText, FileSpreadsheet, FileIcon as FilePresentation, ImageIcon } from "lucide-react"
+import { Upload, X, FileText, FileSpreadsheet, FileIcon as FilePresentation, ImageIcon } from "@/components/icons"
 
 const ACCEPTED_FILE_TYPES = [
   // PDF
@@ -225,4 +225,3 @@ export function FileUploader() {
     </div>
   )
 }
-
